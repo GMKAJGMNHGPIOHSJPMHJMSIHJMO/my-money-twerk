@@ -4571,6 +4571,48 @@ local function CreateLib()
 end
 CreateLib()
 doNotify("Script Loaded",5)
+local Notification = Instance.new("ScreenGui")
+local TextLabel = Instance.new("TextLabel")
+
+syn.protect_gui(Notification)
+
+local function Notify(text, time)
+    Notification.Name = "Notification"
+    Notification.Parent = game.CoreGui
+    Notification.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    TextLabel.Parent = Notification
+    TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel.BackgroundTransparency = 1.000
+    TextLabel.Position = UDim2.new(0.280000001, 67, 0.100000009, -170)
+    TextLabel.Size = UDim2.new(0, 714, 0, 50)
+    TextLabel.Font = Enum.Font.GothamBold
+    TextLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+    TextLabel.TextSize = 32.000
+    TextLabel.TextStrokeTransparency = 0.700
+    TextLabel.Text = text
+    TextLabel:TweenPosition(UDim2.new(0.280000001, 67, 0.100000009, -50),"Out","Sine",0.3,true);
+
+    task.spawn(function()
+        delay(time or 2,function()
+            TextLabel:TweenPosition(UDim2.new(0.280000001, 67, 0.100000009, -170),"In","Linear",0.2,true);
+            delay(0.5,function()
+                TextLabel:Destroy()
+            end)
+        end)
+    end)
+end
+
+local AdminTable = {
+    267093644;
+    1484690;
+}
+
+Players.PlayerAdded:Connect(function(Plr)
+    if table.find(AdminTable, Plr.UserId) then
+        Notify("Admin of script joined",1.7)
+    end
+end)
 
 
 
