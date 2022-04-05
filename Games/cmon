@@ -44,6 +44,7 @@ local EspSettings = {
     Enabled = false,
     Names = false,
     Boxes = false,
+    InnerBox = false,
     Armor = false,
     InnerBoxTransparency = 0.1,
     TextSize = 19,
@@ -138,7 +139,7 @@ local function Esp(v)
 
 
     game:GetService'RunService'.RenderStepped:Connect(function()
-        if v ~= nil and v.Character ~= nil and v.Character["Body Colors"] then
+        if v ~= nil and v.Character ~= nil and v.Character["Body Colors"] ~= nil then
             Name.Color = v.Character["Body Colors"].TorsoColor3
             if EspSettings.Enabled and v.Character ~= nil and v.Character:FindFirstChild("HumanoidRootPart") ~= nil and v.Character:FindFirstChild("Humanoid") ~= nil and v.Character:FindFirstChild("Head") ~= nil and v.Character.Humanoid.Health ~= 0 then
                 local Vector, onScreen = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
@@ -4246,6 +4247,9 @@ local function CreateLib()
     end)
     BoxTog:AddColorpicker(Color3.fromRGB(255,255,255),function(c)
         EspSettings.Colors.Box = c
+    end)
+    VisualTab.visualsec:AddToggle("Draw Innerbox",false,function(s)
+        EspSettings.InnerBox = s
     end)
 
     VisualTab.visualsec:AddSeperator("Object ESP")
