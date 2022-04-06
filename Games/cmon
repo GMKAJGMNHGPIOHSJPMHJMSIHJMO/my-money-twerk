@@ -18,6 +18,7 @@ local CustomTimeSlider = Lighting.ClockTime
 
 local SpamMsg = ""
 local Spamming = false
+_G.boom = false
 
 
 local TotemFolder = workspace.Totems
@@ -48,8 +49,11 @@ local EspSettings = {
     Armor = false,
     InnerBoxTransparency = 0.1,
     TextSize = 19,
-    TextColor = {
-        Names = Color3.new(1,1,1)
+    ShowTool = false,
+    Health = false,
+    Font = 0,
+    Color = {
+        Text = Color3.new(1,1,1)
     },
     CustomObjs = {
         Totems = false,
@@ -81,6 +85,7 @@ function esp_gold(obj,text)
                 Text.Position = Vector2.new(Vector.X + 5,Vector.Y)
                 Text.Size = EspSettings.TextSize
                 Text.Visible = true
+                Text.Font = EspSettings.Font
             else
                 Text.Visible = false 
             end
@@ -103,9 +108,9 @@ function esp_totems(obj,text,color)
             if onScreen and obj ~= nil and obj.Position ~= nil and obj.Parent ~= nil then
                 Text.Text = text
                 Text.Position = Vector2.new(Vector.X + 5,Vector.Y)
-                Text.Size = 19
+                Text.Size = EspSettings.TextSize
                 Text.Visible = true
-                Text.Font = 0
+                Text.Font = EspSettings.Font
             else
                 Text.Visible = false 
             end
@@ -119,6 +124,14 @@ local function Esp(v)
     local Name = Drawing.new("Text")
     local Box = Drawing.new("Square")
     local InnerBox = Drawing.new("Square")
+    local Tool = Drawing.new("Text")
+
+    Tool.Transparency = 1
+    Tool.Visible = false
+    Tool.Size = 19
+    Tool.Center = true
+    Tool.Outline = true
+    Tool.Color = Color3.new(0,1,0)
 
     Name.Transparency = 1
     Name.Visible = false
@@ -146,6 +159,7 @@ local function Esp(v)
             local Size = (Camera:WorldToViewportPoint(RootPart.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(RootPart.Position + Vector3.new(0, 2.6, 0)).Y) / 2
             local BoxSize = Vector2.new(math.floor(Size * 1.8), math.floor(Size * 2.3))
             local BoxPos = Vector2.new(math.floor(Vector.X - Size * 1.8 / 2), math.floor(Vector.Y - Size * 2.3/ 2))
+            local LegPosition = Camera:WorldToScreenPoint(RootPart.Position - Vector3.new(0,3,0))
             if onScreen then
                 Box.Size = BoxSize
                 Box.Position = BoxPos
@@ -167,37 +181,53 @@ local function Esp(v)
                 end
 
                 if EspSettings.Names then
-                    Name.Text = v.Name
+                    if EspSettings.Health then
+                        v.Character:WaitForChild("Humanoid")
+                        Name.Text = string.format("[%s] %s",tostring(math.floor(v.Character.Humanoid.Health)),v.Name)
+                    else
+                        Name.Text = string.format("%s",v.Name)
+                    end
                     Name.Position = Vector2.new(BoxSize.X / 2 + BoxPos.X, BoxPos.Y - 16) -- Dont know how this works but based off of your knowledge this works
                     Name.Visible = true
-                    Name.Font = 0
-                    Name.Size = 19
-                    Name.Color = v.Character["Body Colors"].TorsoColor3
+                    Name.Font = EspSettings.Font
+                    Name.Size = EspSettings.TextSize
+                    Name.Color = EspSettings.Color.Text
                 else
                     Name.Visible = false
+                end
+                if EspSettings.ShowTool and v.Character:FindFirstChildWhichIsA("Model") ~= nil and v.Character:FindFirstChildWhichIsA("Model").Name ~= "Shelly Friend" then
+                    Tool.Position = Vector2.new(LegPosition.X, LegPosition.Y + 37)
+                    Tool.Text = string.format("[%s]",v.Character:FindFirstChildWhichIsA("Model").Name) or "[]"
+                    Tool.Visible = true
+                    Tool.Size = EspSettings.TextSize
+                    Tool.Font = EspSettings.Font
+                else
+                    Tool.Visible = false
                 end
             else
                 Name.Visible = false
                 Box.Visible = false
                 InnerBox.Visible = false
+                Tool.Visible = false
             end
         else
             Name.Visible = false
             Box.Visible = false
             InnerBox.Visible = false
+            Tool.Visible = false
         end
     end)
 end
 
 
 Players.PlayerAdded:Connect(function(Plr)
-    if Plr ~= nil and Plr.Character ~= nil then
+    if Plr then
         Esp(Plr)
     end
 end)
 
 for _,v in pairs(Players:GetPlayers()) do
-    if v ~= Lp and v.Character ~= nil then
+    if v and v ~= Lp then
         Esp(v)
     end
 end
@@ -248,6 +278,7 @@ end
     end)
 --end
 
+
 Rs.Stepped:Connect(function()
     if Aura then
         local Enemy = Closest()
@@ -273,7 +304,6 @@ Rs.Stepped:Connect(function()
             game:GetService("ReplicatedStorage").Events.SwingTool:FireServer(unpack(args))
         end
     end
-
 end)
 
 Rs.RenderStepped:Connect(function()
@@ -4168,6 +4198,15 @@ local function CreateLib()
     local AuraTog = BoogaTab.mainsec:AddToggle("Kill Aura",false,function(s)
         Aura = s
         doNotify("Kill Aura: "..tostring(Aura))
+        local DiffChar = game.Players.LocalPlayer.Character
+        local SwingAnim = Instance.new("Animation")
+        SwingAnim.AnimationId = "rbxassetid://1262318281"
+        local animHum = DiffChar.Humanoid:LoadAnimation(SwingAnim)
+        while Aura do wait(0.5)
+            if DiffChar:FindFirstChildWhichIsA("Model") and DiffChar:FindFirstChildWhichIsA("Model").Name ~= "Shelly Friend" then
+                animHum:Play()
+            end
+        end
     end)
     AuraTog:AddKeybind("None",function(s)
         Aura = s
@@ -4176,17 +4215,6 @@ local function CreateLib()
 
 
     BoogaTab.mainsec:AddSeperator("")
-
-    --[[
-    local HbeSlider = BoogaTab.mainsec:AddToggle("Hitbox Expander",false,function(s)
-        Hbe = s
-    end)
-    HbeSlider:AddSlider(1,1,20,false,function(v)
-        HbeSize = Vector3.new(v,v,v)
-    end)
-    ]]
-
-    -- Misc
 
     if game.PlaceId == 8131331959 or game.PlaceId == 8131316275 or game.PlaceId == 5901346231 then
         BoogaTab.miscsec:AddButton("View Ancient Tree Health",function()
@@ -4241,8 +4269,11 @@ local function CreateLib()
         EspSettings.Enabled = s
     end)
 
-    VisualTab.visualsec:AddToggle("Draw Names",false,function(s)
+    local drawnamelol = VisualTab.visualsec:AddToggle("Draw Names",false,function(s)
         EspSettings.Names = s
+    end)
+    drawnamelol:AddColorpicker(Color3.fromRGB(255,255,255),function(c)
+        EspSettings.Color.Text = c
     end)
 
     local BoxTog = VisualTab.visualsec:AddToggle("Draw Boxes",false,function(s)
@@ -4251,9 +4282,31 @@ local function CreateLib()
     BoxTog:AddColorpicker(Color3.fromRGB(255,255,255),function(c)
         EspSettings.Colors.Box = c
     end)
+    VisualTab.visualsec:AddToggle("Draw Healthbar",false,function(s)
+        EspSettings.Health = s
+    end)
+    VisualTab.visualsec:AddToggle("Draw Tools",false,function(s)
+        EspSettings.ShowTool = s
+    end)
     VisualTab.visualsec:AddToggle("Draw Innerbox",false,function(s)
         EspSettings.InnerBox = s
     end)
+    VisualTab.visualsec:AddSlider("Text Size",15,19,20,false,function(v)
+        EspSettings.TextSize = v
+    end)
+    VisualTab.visualsec:AddDropdown("Change Font",{"UI","System","Plex","Monospace"},false,false,function(n)
+        if n == "UI" then
+            EspSettings.Font = 0
+        elseif n == "System" then
+            EspSettings.Font = 1
+        elseif n == "Plex" then
+            EspSettings.Font = 2
+        elseif n == "Monospace" then
+            EspSettings.Font = 3
+        end
+    end)
+
+    
 
     VisualTab.visualsec:AddSeperator("Object ESP")
     VisualTab.visualsec:AddToggle("Tribe Totems", false,function(s)
@@ -4483,6 +4536,18 @@ Players.PlayerAdded:Connect(function(Plr)
         Notify("Admin of script joined",1.7)
     end
 end)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
